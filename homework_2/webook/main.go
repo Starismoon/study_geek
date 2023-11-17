@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gitee.com/geekbang/basic-go/webook/config"
 	"gitee.com/geekbang/basic-go/webook/internal/repository"
 	"gitee.com/geekbang/basic-go/webook/internal/repository/dao"
 	"gitee.com/geekbang/basic-go/webook/internal/service"
@@ -11,12 +12,12 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"
 	"time"
-	"webook/config"
 )
 
 func main() {
@@ -84,8 +85,8 @@ func initWebServer() *gin.Engine {
 	server.Use(ratelimit.NewBuilder(redisClient,
 		time.Second, 1).Build())
 
-	useJWT(server)
-	//useSession(server)
+	//useJWT(server)
+	useSession(server)
 	return server
 }
 

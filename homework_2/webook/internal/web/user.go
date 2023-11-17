@@ -40,8 +40,8 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	// POST /users/signup
 	ug.POST("/signup", h.SignUp)
 	// POST /users/login
-	//ug.POST("/login", h.Login)
-	ug.POST("/login", h.LoginJWT)
+	ug.POST("/login", h.Login)
+	//ug.POST("/login", h.LoginJWT)
 	// POST /users/edit
 	ug.POST("/edit", h.Edit)
 	// GET /users/profile
@@ -178,61 +178,68 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	//sess := sessions.Default(ctx)
-	//sess.Get("uid")
-	uc, ok := ctx.MustGet("user").(UserClaims)
-	if !ok {
-		//ctx.String(http.StatusOK, "系统错误")
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+	if len(req.Nickname) > 30 {
+		ctx.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "昵称长度不能超过30",
+		})
 		return
 	}
+	if len(req.AboutMe) > 512 {
+		ctx.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "个人简介长度不能超过512",
+		})
+		return
+	}
+	sess := sessions.Default(ctx)
+	userId := sess.Get("userId").(int64)
+	println(userId)
+
 	// 用户输入不对
 	birthday, err := time.Parse(time.DateOnly, req.Birthday)
 	if err != nil {
-		//ctx.String(http.StatusOK, "系统错误")
-		ctx.String(http.StatusOK, "生日格式不对")
+		ctx.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "生日格式不对",
+		})
 		return
 	}
-	err = h.svc.UpdateNonSensitiveInfo(ctx, domain.User{
-		Id:       uc.Uid,
+
+	err = h.svc.UpdateUserInfoById(ctx, domain.User{
+		Id:       userId,
 		Nickname: req.Nickname,
 		Birthday: birthday,
 		AboutMe:  req.AboutMe,
 	})
 	if err != nil {
-		ctx.String(http.StatusOK, "系统异常")
+		ctx.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "系统异常",
+		})
 		return
 	}
-	ctx.String(http.StatusOK, "更新成功")
+	//ctx.String(http.StatusOK, "更新成功")
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": 0,
+	})
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	//us := ctx.MustGet("user").(UserClaims)
-	//ctx.String(http.StatusOK, "这是 profile")
-	// 嵌入一段刷新过期时间的代码
-
-	uc, ok := ctx.MustGet("user").(UserClaims)
-	if !ok {
-		//ctx.String(http.StatusOK, "系统错误")
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	u, err := h.svc.FindById(ctx, uc.Uid)
+	sess := sessions.Default(ctx)
+	userId := sess.Get("userId").(int64)
+	//println(userId)
+	user, err := h.svc.FindById(ctx, userId)
 	if err != nil {
 		ctx.String(http.StatusOK, "系统异常")
 		return
 	}
-	type User struct {
-		Nickname string `json:"nickname"`
-		Email    string `json:"email"`
-		AboutMe  string `json:"aboutMe"`
-		Birthday string `json:"birthday"`
-	}
-	ctx.JSON(http.StatusOK, User{
-		Nickname: u.Nickname,
-		Email:    u.Email,
-		AboutMe:  u.AboutMe,
-		Birthday: u.Birthday.Format(time.DateOnly),
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"Nickname": user.Nickname,
+		"Email":    user.Email,
+		"AboutMe":  user.AboutMe,
+		"Birthday": user.Birthday.Format(time.DateOnly),
 	})
 }
 

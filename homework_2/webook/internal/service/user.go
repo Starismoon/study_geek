@@ -5,6 +5,7 @@ import (
 	"errors"
 	"gitee.com/geekbang/basic-go/webook/internal/domain"
 	"gitee.com/geekbang/basic-go/webook/internal/repository"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -57,4 +58,8 @@ func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context,
 func (svc *UserService) FindById(ctx context.Context,
 	uid int64) (domain.User, error) {
 	return svc.repo.FindById(ctx, uid)
+}
+
+func (svc *UserService) UpdateUserInfoById(ctx *gin.Context, user domain.User) error {
+	return svc.repo.UpdateUserInfoById(ctx, user)
 }

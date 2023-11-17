@@ -71,3 +71,7 @@ func (repo *UserRepository) FindById(ctx context.Context, uid int64) (domain.Use
 	}
 	return repo.toDomain(u), nil
 }
+func (repo *UserRepository) UpdateUserInfoById(ctx context.Context,
+	user domain.User) error {
+	return repo.dao.UpdateById(ctx, repo.toEntity(user))
+}
